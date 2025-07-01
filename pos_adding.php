@@ -1999,33 +1999,23 @@ if (isset($_GET['student_id'])) {
         function calculateDemoFeeJS() {
             if (isFirstTransaction && currentProgram) {
                 // For first transactions, calculate based on program total and initial payment
-                const totalTuition = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
+                // #finalTotalHidden already contains the total AFTER promo discount is applied
+                const totalAfterPromo = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
                 const initialPayment = initial_total_pay || parseFloat(currentProgram.initial_fee || 0);
 
-                // Get promo discount directly from PHP variable
-
-
-                // Calculate new tuition after promo discount
-                const newTuition = totalTuition;
-
                 // Calculate remaining amount after initial payment 
-                const remainingAmount = newTuition - initialPayment;
+                const remainingAmount = totalAfterPromo - initialPayment;
 
                 // Split remaining amount into 4 equal demo payments
-                return remainingAmount / 4;
+                return Math.max(0, remainingAmount / 4);
             } else {
                 // For existing transactions, use current balance
-                const promo = <?php echo isset($row_promo['enrollment_fee']) ? $row_promo['enrollment_fee'] : 0 ?>;
-                console.log(parseFloat(currentBalance));
-                console.log(parseFloat(promo));
-                const currentBalanceAmount = currentBalance - parseFloat(promo) || 0;
-
                 const paidDemosCount = paidDemos.length;
                 const remainingDemos = 4 - paidDemosCount;
 
-                if (remainingDemos > 0 && currentBalanceAmount > 0) {
+                if (remainingDemos > 0 && currentBalance > 0) {
                     // Calculate remaining demo fee based on current balance
-                    return currentBalanceAmount / remainingDemos;
+                    return currentBalance / remainingDemos;
                 }
             }
             return 0;
