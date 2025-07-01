@@ -649,7 +649,8 @@ try {
         }
 
         $debit_amount = $final_payment_amount;
-        $credit_amount = $final_payment_amount;
+        // FIXED: Credit amount should be total program value (final_total + promo_discount)
+        $credit_amount = $final_total + $promo_discount;
 
 
 

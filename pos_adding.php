@@ -171,15 +171,18 @@ if (isset($_GET['student_id'])) {
         $total_tuition = $select_program_row['total_tuition'];
 
         // Calculate remaining amount and demo fee
-        $total_remaining = $total_tuition - $initial_pay;
+        // Use final_total (after promo discount) instead of raw total_tuition
+        $total_remaining = $final_total - $initial_pay;
         $default_demo_fee = $total_remaining / 4;  // Split remaining amount equally into 4 demos
 
         // Add debug logging
         error_log(sprintf(
-            "[%s] Demo Fee Calculation - User: %s\nTotal Tuition: %s\nInitial Payment: %s\nRemaining: %s\nDemo Fee: %s",
+            "[%s] Demo Fee Calculation - User: %s\nTotal Tuition: %s\nPromo Discount: %s\nFinal Total: %s\nInitial Payment: %s\nRemaining: %s\nDemo Fee: %s",
             $current_timestamp,
             $current_user,
             number_format($total_tuition, 2),
+            number_format($PR, 2),
+            number_format($final_total, 2),
             number_format($initial_pay, 2),
             number_format($total_remaining, 2),
             number_format($default_demo_fee, 2)
@@ -212,7 +215,7 @@ if (isset($_GET['student_id'])) {
         // Process demo payment details
         while ($row = $demo_result->fetch_assoc()) {
             $total_paid = floatval($row['total_paid']);
-            $required = floatval($row['required_amount']) ?: $default_demo_fee;
+            $required = $default_demo_fee;  // Always use the correct calculated demo fee
             $current_balance = floatval($row['current_balance']);
 
             // Enhanced status determination
@@ -2016,9 +2019,8 @@ if (isset($_GET['student_id'])) {
             } else {
                 // For existing transactions, use current balance
                 const promo = <?php echo isset($row_promo['enrollment_fee']) ? $row_promo['enrollment_fee'] : 0 ?>;
-                console.log(parseFloat(currentBalance));
-                console.log(parseFloat(promo));
-                const currentBalanceAmount = currentBalance - parseFloat(promo) || 0;
+                // Use current balance directly without subtracting promo again
+                const currentBalanceAmount = currentBalance || 0;
 
                 const paidDemosCount = paidDemos.length;
                 const remainingDemos = 4 - paidDemosCount;
