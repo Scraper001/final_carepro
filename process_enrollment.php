@@ -398,9 +398,9 @@ function checkProgramEndDate($conn, $program_id)
  */
 function calculateDemoFee($conn, $student_id, $program_id, $final_total)
 {
-    // Get current balance from most recent transaction
+    // Get current balance and promo discount from most recent transaction
     $balance_stmt = $conn->prepare("
-        SELECT balance FROM pos_transactions 
+        SELECT balance, promo_discount FROM pos_transactions 
         WHERE student_id = ? AND program_id = ? 
         ORDER BY id DESC LIMIT 1
     ");
@@ -414,6 +414,10 @@ function calculateDemoFee($conn, $student_id, $program_id, $final_total)
     $balance_stmt->execute();
     $balance_result = $balance_stmt->get_result()->fetch_assoc();
     $current_balance = safe_float($balance_result['balance'] ?? $final_total);
+    $promo_discount = safe_float($balance_result['promo_discount'] ?? 0);
+
+    // Deduct promo discount from current balance (matching frontend logic)
+    $adjusted_balance = $current_balance - $promo_discount;
 
     // Get paid demos count
     $demo_stmt = $conn->prepare("
@@ -430,7 +434,7 @@ function calculateDemoFee($conn, $student_id, $program_id, $final_total)
     $paid_demos_count = intval($demo_result['paid_demos_count'] ?? 0);
 
     $remaining_demos = 4 - $paid_demos_count;
-    $demo_fee = $remaining_demos > 0 ? max(0, $current_balance / $remaining_demos) : 0;
+    $demo_fee = $remaining_demos > 0 ? max(0, $adjusted_balance / $remaining_demos) : 0;
 
     return $demo_fee;
 }
