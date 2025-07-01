@@ -1615,7 +1615,8 @@ if (isset($_GET['student_id'])) {
                     if (currentPackage && currentPackage.selection_type > 2 && currentPackage.custom_initial_payment) {
                         requiredAmount = parseFloat(currentPackage.custom_initial_payment);
                     } else {
-                        requiredAmount = parseFloat(currentProgram?.initial_fee || 0);
+                        // FIXED: Use calculated final total for initial payment credit calculation
+                        requiredAmount = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram?.total_tuition || 0);
                     }
                     break;
                 case 'demo_payment':
@@ -2000,7 +2001,8 @@ if (isset($_GET['student_id'])) {
             if (isFirstTransaction && currentProgram) {
                 // For first transactions, calculate based on program total and initial payment
                 const totalTuition = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
-                const initialPayment = initial_total_pay || parseFloat(currentProgram.initial_fee || 0);
+                // FIXED: Use the actual total tuition for demo calculation instead of potentially incorrect initial_fee
+                const initialPayment = initial_total_pay || totalTuition;
 
                 // Get promo discount directly from PHP variable
 
@@ -2944,7 +2946,9 @@ if (isset($_GET['student_id'])) {
                     if (currentPackage && currentPackage.selection_type > 2 && currentPackage.custom_initial_payment) {
                         amount = parseFloat(currentPackage.custom_initial_payment);
                     } else {
-                        amount = parseFloat(currentProgram.initial_fee || 0);
+                        // FIXED: Use the calculated final total for initial payment instead of hardcoded initial_fee
+                        // This ensures the credit amount reflects the actual program cost
+                        amount = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
                     }
                     break;
                 case 'demo_payment':
@@ -3819,7 +3823,7 @@ if (isset($_GET['student_id'])) {
             } else if (paymentType === 'initial_payment') {
                 const requiredAmount = currentPackage && currentPackage.selection_type > 2 && currentPackage.custom_initial_payment
                     ? parseFloat(currentPackage.custom_initial_payment)
-                    : parseFloat(currentProgram?.initial_fee || 0);
+                    : parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram?.total_tuition || 0);
 
                 if (totalPayment > requiredAmount && requiredAmount > 0) {
                     const excessAmount = totalPayment - requiredAmount;
@@ -4200,7 +4204,8 @@ if (isset($_GET['student_id'])) {
             getRequiredInitialPayment: () => {
                 if (!currentPackage) return null;
                 if (currentPackage.selection_type <= 2) {
-                    return parseFloat(currentProgram?.initial_fee || 0);
+                    // FIXED: Use calculated final total for proper credit amount calculation
+                    return parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram?.total_tuition || 0);
                 } else {
                     return parseFloat(currentPackage.custom_initial_payment || 0);
                 }
