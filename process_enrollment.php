@@ -36,7 +36,7 @@ function debug_log($message, $data = null)
 /**
  * ENHANCED: Excess Payment Handler for Initial Payments
  */
-function handleExcessInitialPayment($conn, $student_id, $program_id, $excess_option, $original_amount, $required_amount, $excess_amount, $total_tuition, $start_balance)
+function handleExcessInitialPayment($conn, $student_id, $program_id, $excess_option, $original_amount, $required_amount, $excess_amount, $final_total, $start_balance)
 {
     $result = [
         'processed_amount' => $required_amount,
@@ -49,7 +49,7 @@ function handleExcessInitialPayment($conn, $student_id, $program_id, $excess_opt
     switch ($excess_option) {
         case 'treat_as_full':
             // 1️⃣ Treat Payment as Full Initial
-            $remaining_tuition = $total_tuition - $original_amount;
+            $remaining_tuition = $final_total - $original_amount;  // Use final_total instead of total_tuition
             $demo_balance = max(0, $remaining_tuition / 4);
 
             $result = [
@@ -69,7 +69,7 @@ function handleExcessInitialPayment($conn, $student_id, $program_id, $excess_opt
         case 'allocate_to_demos':
             // 2️⃣ Allocate Excess to Demos (Fixed)
             // First calculate the per-demo fee correctly
-            $base_demo_fee = ($total_tuition - $required_amount) / 4;
+            $base_demo_fee = ($final_total - $required_amount) / 4;  // Use final_total instead of total_tuition
             $remaining_excess = $excess_amount;
             $demo_allocations = [];
 
@@ -430,6 +430,8 @@ function calculateDemoFee($conn, $student_id, $program_id, $final_total)
     $paid_demos_count = intval($demo_result['paid_demos_count'] ?? 0);
 
     $remaining_demos = 4 - $paid_demos_count;
+    
+    // Use max to ensure we don't return negative values
     $demo_fee = $remaining_demos > 0 ? max(0, $current_balance / $remaining_demos) : 0;
 
     return $demo_fee;

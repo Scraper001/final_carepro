@@ -170,16 +170,16 @@ if (isset($_GET['student_id'])) {
         $select_program_row = $select_programs_total_result->fetch_assoc();
         $total_tuition = $select_program_row['total_tuition'];
 
-        // Calculate remaining amount and demo fee
-        $total_remaining = $total_tuition - $initial_pay;
+        // Calculate remaining amount and demo fee (accounting for promo discount)
+        $total_remaining = $final_total - $initial_pay;  // Use final_total which already has promo discount applied
         $default_demo_fee = $total_remaining / 4;  // Split remaining amount equally into 4 demos
 
         // Add debug logging
         error_log(sprintf(
-            "[%s] Demo Fee Calculation - User: %s\nTotal Tuition: %s\nInitial Payment: %s\nRemaining: %s\nDemo Fee: %s",
+            "[%s] Demo Fee Calculation - User: %s\nFinal Total (after promo): %s\nInitial Payment: %s\nRemaining: %s\nDemo Fee: %s",
             $current_timestamp,
             $current_user,
-            number_format($total_tuition, 2),
+            number_format($final_total, 2),
             number_format($initial_pay, 2),
             number_format($total_remaining, 2),
             number_format($default_demo_fee, 2)
@@ -1998,34 +1998,23 @@ if (isset($_GET['student_id'])) {
         // =============================================================================================
         function calculateDemoFeeJS() {
             if (isFirstTransaction && currentProgram) {
-                // For first transactions, calculate based on program total and initial payment
-                const totalTuition = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
+                // For first transactions, calculate based on final total (after promo) and initial payment
+                const finalTotal = parseFloat($('#finalTotalHidden').val()) || parseFloat(currentProgram.total_tuition || 0);
                 const initialPayment = initial_total_pay || parseFloat(currentProgram.initial_fee || 0);
 
-                // Get promo discount directly from PHP variable
-
-
-                // Calculate new tuition after promo discount
-                const newTuition = totalTuition;
-
                 // Calculate remaining amount after initial payment 
-                const remainingAmount = newTuition - initialPayment;
+                const remainingAmount = finalTotal - initialPayment;
 
                 // Split remaining amount into 4 equal demo payments
-                return remainingAmount / 4;
+                return Math.max(0, remainingAmount / 4);
             } else {
-                // For existing transactions, use current balance
-                const promo = <?php echo isset($row_promo['enrollment_fee']) ? $row_promo['enrollment_fee'] : 0 ?>;
-                console.log(parseFloat(currentBalance));
-                console.log(parseFloat(promo));
-                const currentBalanceAmount = currentBalance - parseFloat(promo) || 0;
-
+                // For existing transactions, use current balance (which should already account for promo and payments)
                 const paidDemosCount = paidDemos.length;
                 const remainingDemos = 4 - paidDemosCount;
 
-                if (remainingDemos > 0 && currentBalanceAmount > 0) {
+                if (remainingDemos > 0 && currentBalance > 0) {
                     // Calculate remaining demo fee based on current balance
-                    return currentBalanceAmount / remainingDemos;
+                    return Math.max(0, currentBalance / remainingDemos);
                 }
             }
             return 0;
