@@ -215,7 +215,7 @@ if (isset($_GET['student_id'])) {
         // Process demo payment details
         while ($row = $demo_result->fetch_assoc()) {
             $total_paid = floatval($row['total_paid']);
-            $required = floatval($row['required_amount']) ?: $default_demo_fee;
+            $required = $default_demo_fee;  // Always use the correct calculated demo fee
             $current_balance = floatval($row['current_balance']);
 
             // Enhanced status determination
